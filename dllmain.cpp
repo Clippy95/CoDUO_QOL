@@ -77,6 +77,8 @@ cvar_t* safeArea_horizontal;
 cvar_t* r_noborder;
 void codDLLhooks(HMODULE handle);
 
+unsigned int x_modded = 1920;
+
 typedef HMODULE(__cdecl* LoadsDLLsT)(const char* a1, FARPROC* a2, int a3);
 LoadsDLLsT originalLoadDLL = nullptr;
 
@@ -153,6 +155,21 @@ uintptr_t cg(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
         result = CGAME_OFF(result);
     }
     return result;
+
+}
+
+uintptr_t exe(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
+
+    if (!LoadedGame)
+        return NULL;
+
+    if (LoadedGame->game == UO_SP)
+        return CODUOSP;
+
+    if (LoadedGame->game == UO_MP)
+        return CODUOMP;
+
+    return NULL;
 
 }
 
@@ -1013,26 +1030,58 @@ const HudShaderConfig* FindHudShaderConfig(const char* shaderName) {
 }
 SafetyHookMid* DrawObjectives;
 
+SafetyHookMid* DrawMissionObjectives;
+
+void StaticInstructionPatches(cvar_s* safeArea_horizontal_ptr = safeArea_horizontal, bool DLLLoad = true) {
+
+    auto safe_x = get_safeArea_horizontal();
+
+    auto width_x = process_width() * 0.5f;
+
+    auto x = width_x * safe_x;
+    auto menuConfig = FindMenuConfig("Compass");
+    if (cg(0x30026DC6) && menuConfig && menuConfig->alignment.h_left) {
+        Memory::VP::Patch<float>(cg(0x30026DC6) + 0x1, 21.f - x);
+        Memory::VP::Patch<float>(cg(0x30026DDC) + 0x1, 20.f - x);
+        Memory::VP::Patch<float>(cg(0x30026F8D) + 0x4, 20.f - x);
+        Memory::VP::Patch<float>(cg(0x30026E17) + 0x4, 20.f - x);
+
+        if (DLLLoad) {
+            CreateMidHook(cg(0x30026F36), [](SafetyHookContext& ctx) {
+                float& checkbox_x = *(float*)(ctx.esp);
+
+                auto menuConfig = FindMenuConfig("Compass");
+                if (menuConfig && menuConfig->alignment.h_left) {
+                    // Get actual screen width from scale
+                    float scale = *(float*)cg(0x3024B740);
+                    float screen_width = scale * 640.0f;
+                    float offset = (screen_width / 2.0f) - 640.0f;
+                    offset *= get_safeArea_horizontal();
+
+
+                    //printf("scale=%.2f, screen_width=%.2f, offset=%.2f, checkbox_x before=%.2f, after=%.2f\n",
+                    //    scale, screen_width, offset, checkbox_x, checkbox_x - offset);
+
+                    checkbox_x -= process_widths() * get_safeArea_horizontal();
+                }
+                });
+        }
+
+    }
+
+}
+
 void codDLLhooks(HMODULE handle) {
    // printf("run");
     uintptr_t OFFSET = (uintptr_t)handle;
     cg_game_offset = OFFSET;
-    //printf("HANDLE : 0x%p ADDR : 0x%p \n", handle, OFFSET + 0x2CC20);
-    //CG_GetViewFov_og_S.reset();
-    //static auto blur_test = safetyhook::create_mid(0x4D9926, [](SafetyHookContext& ctx) {
-
-    //    static int fuck[6]{};
-    //    printf("fuck %p\n", fuck);
-    //    *(int*)(ctx.esp) += fuck[0];
-
-    //    *(int*)(ctx.esp + 0x4) += fuck[1];
-    //    *(int*)(ctx.esp + 0x4 + 0x4) += fuck[2];
-
-    //    *(int*)(ctx.esp + 0x4 + 0x4 + 0x4) += fuck[3];
-    //    });
-
+    StaticInstructionPatches();
     Memory::VP::InterceptCall(OFFSET + LoadedGame->CG_DrawFlashImage_Draw, DrawStretch_og, DrawStretch_300135B0);
     Memory::VP::InterceptCall(cg(0x3001221A,0x3001A8CF), DrawStretch_og, DrawStretch_300135B0);
+
+    unsigned int *res = (unsigned int*)LoadedGame->X_res_Addr;
+
+    x_modded = res[0] + (res[0] - (res[1] * GetAspectRatio()));
 
     //Memory::VP::InterceptCall(OFFSET + 0x11F68, crosshair_render_func, crosshair_render_hook);
 
@@ -1131,12 +1180,49 @@ void codDLLhooks(HMODULE handle) {
     
 }
 
+
+
+
+SafetyHookInline Cvar_Set_og;
+cvar_s* __cdecl Cvar_Set(const char* cvar_name, const char* value, BOOL force) {
+    auto result = Cvar_Set_og.ccall<cvar_s*>(cvar_name, value, force);
+
+
+    if (result && result->name && (strcmp(result->name, "safeArea_horizontal") == 0)) {
+        StaticInstructionPatches(NULL,false);
+    }
+
+    return result;
+
+
+
+}
+
 void InitHook() {
 
     if (!CheckGame()) {
         MessageBoxW(NULL, L"COD CLASSIC LOAD FAILED", L"Error", MB_OK | MB_ICONWARNING);
         return;
     }
+
+    if (exe(1)) {
+        Cvar_Set_og = safetyhook::create_inline(exe(0x00433A60), Cvar_Set);
+
+        static auto blur_test = safetyhook::create_mid(0x4D9926, [](SafetyHookContext& ctx) {
+
+            static float fuck[4]{};
+            printf("fuck %p\n", fuck);
+            float* args = (float*)(ctx.esp);
+
+
+            args[0] -= process_widths();
+
+            args[2] += process_widths() * 2.f;
+
+            });
+
+    }
+
     char buffer[128]{};
     const char* buffertosee = "UNKNOWN";
     if (LoadedGame == &COD_UO_SP) {
