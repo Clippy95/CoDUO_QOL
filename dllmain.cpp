@@ -485,115 +485,6 @@ void sub_431CA0(SafetyHookContext& ctx) {
 
 }
 void LoadMenuConfigs();
-void InitHook() {
-
-    if (!CheckGame()) {
-        MessageBoxW(NULL, L"COD CLASSIC LOAD FAILED", L"Error", MB_OK | MB_ICONWARNING);
-        return;
-    }
-    char buffer[128]{};
-    const char* buffertosee = "UNKNOWN";
-    if (LoadedGame == &COD_UO_SP) {
-        buffertosee = "COD_UO_SP";
-    }
-    else if (LoadedGame == &COD_SP) {
-        buffertosee = "COD_UO_MP";
-    }
-
-    sprintf_s(buffer, sizeof(buffer), "INIT START %s", buffertosee);
-    MessageBoxA(NULL, buffer, "Error", MB_OK | MB_ICONWARNING);
-
-    SetUpFunctions();
-    LoadMenuConfigs();
-    printf("should call the cg func\n");
-    if (cg(1)) {
-        printf("doing the winmain hook\n");
-        //Memory::VP::InterceptCall(0x00455176, InsideWinMain, sub_431CA0);
-
-        static auto AfterCvars = safetyhook::create_mid(0x0045517B, sub_431CA0);
-
-    }
-
-    //Memory::VP::InjectHook(0x00411757, Con_DrawConsole);
-
-    LoadLibraryD = safetyhook::create_inline(LoadLibraryA, LoadLibraryHook);
-
-    FreeLibraryD = safetyhook::create_inline(FreeLibrary, FreeLibraryHook);
-
-    if (Cvar_Get != NULL) 
-    {
-
-
-        //Memory::VP::InjectHook(0x4D7D90, glviewport_47BD978);
-
-        //static auto test = CreateMidHook(0x004D7D90, [](SafetyHookContext& ctx) {
-
-        //    int* args = (int*)ctx.esp;
-
-        //    args[0] = process_width(0);
-
-        //    float whatever = args[2];
-
-
-
-        //    float mult = (STANDARD_ASPECT / GetAspectRatio());
-
-
-        //    whatever *= mult;
-
-        //    args[2] = (int)whatever;
-
-        //    });
-
-
-    }
-    //if (MH_Initialize() != MH_OK) {
-    //    //MessageBoxW(NULL, L"FAILED TO INITIALIZE", L"Error", MB_OK | MB_ICONERROR);
-    //    return;
-    //}
-    //if (MH_CreateHook((void**)CheckGame()->LoadDLLAddr, &hookCOD_dllLoad, (void**)&originalLoadDLL) != MH_OK) {
-    //    //MessageBoxW(NULL, L"FAILED TO HOOK", L"Error", MB_OK | MB_ICONERROR);
-    //    return;
-    //}
-
-    //originalLoadDLLd = safetyhook::CreateInlineHook(CheckGame()->LoadDLLAddr, hookCOD_dllLoad);
-
-
-    //if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
-    //    //MessageBoxW(NULL, L"FAILED TO ENABLE", L"Error", MB_OK | MB_ICONERROR);
-    //    return;
-    //}
-
-    //if (cg(1)) {
-    //    static auto borderless_hook1 = safetyhook::create_mid(0x00502F87, [](SafetyHookContext& ctx) {
-    //        auto& cdsFullScreen = ctx.esi;
-    //        if (r_noborder && r_noborder->integer) {
-    //            printf("fuckwit\n");
-    //            cdsFullScreen = false;
-    //            DWORD& dwStylea = *(DWORD*)(ctx.esp + 0x54);
-    //            DWORD& dwExStylea = *(DWORD*)(ctx.esp + 0x50);
-    //            dwExStylea = 0;
-    //            dwStylea = WS_POPUP | WS_SYSMENU;
-    //            ctx.eip = 0x00502FC0;
-    //        }
-
-    //        });
-    //}
-
-    std::thread([&]() {
-        while (!glOrtho_og.target_address()) {
-            if (*(uintptr_t*)LoadedGame->GL_Ortho_ptr) {
-                glOrtho_og = safetyhook::create_inline(
-                    *(uintptr_t*)LoadedGame->GL_Ortho_ptr,
-                    &glOrtho_detour
-                );
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        }
-        }).detach();
-
-
-}
 
 
 
@@ -1100,7 +991,7 @@ const HudShaderConfig* FindHudShaderConfig(const char* shaderName) {
 
     return nullptr;
 }
-
+SafetyHookMid* DrawObjectives;
 
 void codDLLhooks(HMODULE handle) {
    // printf("run");
@@ -1108,7 +999,6 @@ void codDLLhooks(HMODULE handle) {
     cg_game_offset = OFFSET;
     //printf("HANDLE : 0x%p ADDR : 0x%p \n", handle, OFFSET + 0x2CC20);
     //CG_GetViewFov_og_S.reset();
-
     //static auto blur_test = safetyhook::create_mid(0x4D9926, [](SafetyHookContext& ctx) {
 
     //    static int fuck[6]{};
@@ -1145,7 +1035,7 @@ void codDLLhooks(HMODULE handle) {
     Item_Paint = CreateInlineHook(OFFSET + LoadedGame->Item_Paint, Item_Paint_Hook);
 
     if (cg(1, 0)) {
-        static auto DrawObjectives = CreateMidHook(OFFSET + 0x12900, [](SafetyHookContext& ctx) {
+        DrawObjectives = CreateMidHook(OFFSET + 0x12900, [](SafetyHookContext& ctx) {
             auto menuConfig = FindMenuConfig("Compass");
             if (menuConfig && menuConfig->alignment.h_left) {
 
@@ -1173,7 +1063,6 @@ void codDLLhooks(HMODULE handle) {
     }
 
     DrawHudElemMaterial_mid = CreateMidHook(cg(0x3001F8D4, 0x3002A26C), [](SafetyHookContext& ctx) {
-
         const char* hud_elem_shader_name = (const char*)(ctx.esp + 0x1C);
 
         // Check if shader has a config
@@ -1220,6 +1109,117 @@ void codDLLhooks(HMODULE handle) {
         });
     
     
+}
+
+void InitHook() {
+
+    if (!CheckGame()) {
+        MessageBoxW(NULL, L"COD CLASSIC LOAD FAILED", L"Error", MB_OK | MB_ICONWARNING);
+        return;
+    }
+    char buffer[128]{};
+    const char* buffertosee = "UNKNOWN";
+    if (LoadedGame == &COD_UO_SP) {
+        buffertosee = "COD_UO_SP";
+    }
+    else if (LoadedGame == &COD_SP) {
+        buffertosee = "COD_UO_MP";
+    }
+
+    sprintf_s(buffer, sizeof(buffer), "INIT START %s", buffertosee);
+    MessageBoxA(NULL, buffer, "Error", MB_OK | MB_ICONWARNING);
+
+    SetUpFunctions();
+    LoadMenuConfigs();
+    LoadHudShaderConfigs();
+    printf("should call the cg func\n");
+    if (cg(1)) {
+        printf("doing the winmain hook\n");
+        //Memory::VP::InterceptCall(0x00455176, InsideWinMain, sub_431CA0);
+
+        static auto AfterCvars = safetyhook::create_mid(0x0045517B, sub_431CA0);
+
+    }
+
+    //Memory::VP::InjectHook(0x00411757, Con_DrawConsole);
+
+    LoadLibraryD = safetyhook::create_inline(LoadLibraryA, LoadLibraryHook);
+
+    FreeLibraryD = safetyhook::create_inline(FreeLibrary, FreeLibraryHook);
+
+    if (Cvar_Get != NULL)
+    {
+
+
+        //Memory::VP::InjectHook(0x4D7D90, glviewport_47BD978);
+
+        //static auto test = CreateMidHook(0x004D7D90, [](SafetyHookContext& ctx) {
+
+        //    int* args = (int*)ctx.esp;
+
+        //    args[0] = process_width(0);
+
+        //    float whatever = args[2];
+
+
+
+        //    float mult = (STANDARD_ASPECT / GetAspectRatio());
+
+
+        //    whatever *= mult;
+
+        //    args[2] = (int)whatever;
+
+        //    });
+
+
+    }
+    //if (MH_Initialize() != MH_OK) {
+    //    //MessageBoxW(NULL, L"FAILED TO INITIALIZE", L"Error", MB_OK | MB_ICONERROR);
+    //    return;
+    //}
+    //if (MH_CreateHook((void**)CheckGame()->LoadDLLAddr, &hookCOD_dllLoad, (void**)&originalLoadDLL) != MH_OK) {
+    //    //MessageBoxW(NULL, L"FAILED TO HOOK", L"Error", MB_OK | MB_ICONERROR);
+    //    return;
+    //}
+
+    //originalLoadDLLd = safetyhook::CreateInlineHook(CheckGame()->LoadDLLAddr, hookCOD_dllLoad);
+
+
+    //if (MH_EnableHook(MH_ALL_HOOKS) != MH_OK) {
+    //    //MessageBoxW(NULL, L"FAILED TO ENABLE", L"Error", MB_OK | MB_ICONERROR);
+    //    return;
+    //}
+
+    //if (cg(1)) {
+    //    static auto borderless_hook1 = safetyhook::create_mid(0x00502F87, [](SafetyHookContext& ctx) {
+    //        auto& cdsFullScreen = ctx.esi;
+    //        if (r_noborder && r_noborder->integer) {
+    //            printf("fuckwit\n");
+    //            cdsFullScreen = false;
+    //            DWORD& dwStylea = *(DWORD*)(ctx.esp + 0x54);
+    //            DWORD& dwExStylea = *(DWORD*)(ctx.esp + 0x50);
+    //            dwExStylea = 0;
+    //            dwStylea = WS_POPUP | WS_SYSMENU;
+    //            ctx.eip = 0x00502FC0;
+    //        }
+
+    //        });
+    //}
+
+    std::thread([&]() {
+        while (!glOrtho_og.target_address()) {
+            if (*(uintptr_t*)LoadedGame->GL_Ortho_ptr) {
+                glOrtho_og = safetyhook::create_inline(
+                    *(uintptr_t*)LoadedGame->GL_Ortho_ptr,
+                    &glOrtho_detour
+                );
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        }).detach();
+
+
 }
 
 BOOL APIENTRY DllMain( HMODULE hModule,
