@@ -297,7 +297,7 @@ struct hudelem_s
     int32_t fromColor;
     uint32_t fadeStartTime;
     uint32_t fadeTime;
-    int32_t label;
+    //int32_t label;
     uint32_t width;
     int32_t height;
     uint32_t materialIndex;

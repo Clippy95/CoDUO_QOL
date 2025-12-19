@@ -19,6 +19,8 @@
 #include <fstream>
 #include "nlohmann/json.hpp"
 
+#include "Hooking.Patterns.h"
+
 #define SCREEN_WIDTH        640
 #define SCREEN_HEIGHT       480
 
@@ -150,7 +152,7 @@ uintptr_t ui_offset = 0;
 
 #define UI_OFF(x) (ui_offset + (x - 0x40000000))
 
-uintptr_t cg(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
+SAFETYHOOK_NOINLINE uintptr_t cg(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
 
     if (cg_game_offset == NULL)
         return NULL;
@@ -169,7 +171,7 @@ uintptr_t cg(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
 
 }
 
-uintptr_t ui(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
+SAFETYHOOK_NOINLINE uintptr_t ui(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
 
     if (ui_offset == NULL)
         return NULL;
@@ -194,7 +196,22 @@ void trap_R_SetColor(float* rgba) {
         cdecl_call<void>(ptr, rgba);
 }
 
-uintptr_t exe(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
+SAFETYHOOK_NOINLINE uintptr_t exe(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
+
+    if (!LoadedGame)
+        return NULL;
+
+    if (LoadedGame->game == UO_SP)
+        return CODUOSP;
+
+    if (LoadedGame->game == UO_MP)
+        return CODUOMP;
+
+    return NULL;
+
+}
+
+uintptr_t sp_mp(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
 
     if (!LoadedGame)
         return NULL;
@@ -635,15 +652,39 @@ int __cdecl CG_DrawPic(float a1, float a2, float a3, float a4, int a5) {
 }
 static float adjustments[10];
 
-
 void _cdecl crosshair_render_hook(float x, float y, float width, float height, int unk1, float u1, float u2, float v1, float rotation, int shaderHandle) {
-    // The ortho fix makes things 4:3, but the crosshair was scaled for widescreen
-    // So we need to scale it UP to maintain proper size
+    int side;
+    __asm mov side, esi
+
     float aspect = GetAspectRatio();
     float aspectRatio = aspect / (4.0f / 3.0f);
 
-    width *= aspectRatio;
-    height *= aspectRatio;
+    static float horizontal_width_mult = 1.0f;
+    static float horizontal_height_mult = 1.0f;
+    static float vertical_width_mult = 1.0f;
+    static float vertical_height_mult = 1.0f;
+    static float x_offset_mult = 0.0f;  // Try 0 first (no centering)
+    static float y_offset_mult = 0.0f;
+
+    float orig_width = width;
+    float orig_height = height;
+
+    bool is_horizontal = (side == 0 || side == 2);
+
+    if (is_horizontal) {
+        width *= aspectRatio * horizontal_width_mult;
+        height *= aspectRatio * horizontal_height_mult;
+    }
+    else {
+        width *= aspectRatio * vertical_width_mult;
+        height *= aspectRatio * vertical_height_mult;
+    }
+
+    x -= ((width - orig_width) / 2.0f) * x_offset_mult;
+    y -= ((height - orig_height) / 2.0f) * y_offset_mult;
+
+    printf("side=%d, x_off_mult=%.3f (%p), y_off_mult=%.3f (%p)\n",
+        side, x_offset_mult, &x_offset_mult, y_offset_mult, &y_offset_mult);
 
     cdecl_call<void>(crosshair_render_func, x, y, width, height, unk1, u1, u2, v1, rotation, shaderHandle);
 }
@@ -918,8 +959,9 @@ void __fastcall Item_Paint_Hook(itemDef_t* item, SafetyHookInline* hook, bool ui
     const char* menuName = nullptr;
     menuDef_t* menu = nullptr;
     // Get menu name
-    if (item->parent) {
-        menu = (menuDef_t*)item->parent;
+    auto parent_ptr = sp_mp((uintptr_t)item->parent, item->textSavegameInfo);
+    if (parent_ptr) {
+        menu = (menuDef_t*)parent_ptr;
         if (menu && menu->window.name) {
             menuName = menu->window.name;
             //printf("menuName %s\n", menuName);
@@ -939,7 +981,7 @@ void __fastcall Item_Paint_Hook(itemDef_t* item, SafetyHookInline* hook, bool ui
 
 
     if (item && item->window.name) {
-        printf("item %s\n", item->window.name);
+        //printf("item %s\n", item->window.name);
     }
 
     if (config && menu && menu->items && menu->items[0] == item || item && item->window.name && (strcmp(item->window.name,"main_back_top") == 0) ) {
@@ -1043,9 +1085,9 @@ int __fastcall DrawSingleHudElem2dHook(hudelem_s* thisa) {
     HudAlignmentState state = { };
 
     if (thisa) {
-        printf("type? %d x %d y %d alignx %d aligny %d\n",
-            thisa->type, thisa->x, thisa->y,
-            thisa->alignx, thisa->aligny);
+        //printf("type? %d x %d y %d alignx %d aligny %d\n",
+        //    thisa->type, thisa->x, thisa->y,
+        //    thisa->alignx, thisa->aligny);
 
         // Process alignment adjustments
         ProcessHudElemAlignment(thisa, &state);
@@ -1167,6 +1209,24 @@ void ui_hooks(HMODULE handle) {
 
 }
 
+SafetyHookInline* SCR_DrawString_hook_possible1_detour;
+
+int __cdecl SCR_DrawString_hook_possible1(float x, float y, float width, float height) {
+    if (x >= 0 && x <= 120) {
+
+        x -= (process_width() * get_safeArea_horizontal());
+
+    }
+
+
+    if (x >= 300 && x <= 640) {
+        x += (process_width() * get_safeArea_horizontal());
+    }
+
+    return SCR_DrawString_hook_possible1_detour->unsafe_ccall<int>(x, y, width, height);
+}
+
+
 void codDLLhooks(HMODULE handle) {
    // printf("run");
     uintptr_t OFFSET = (uintptr_t)handle;
@@ -1179,7 +1239,13 @@ void codDLLhooks(HMODULE handle) {
 
     x_modded = res[0] + (res[0] - (res[1] * GetAspectRatio()));
 
-    //Memory::VP::InterceptCall(OFFSET + 0x11F68, crosshair_render_func, crosshair_render_hook);
+    auto pat = hook::pattern(handle,"83 EC ? 8B 44 24 ? ? ? ? ? ? ? ? ? ? ? 8B 4C 24 ? 6A 00");
+
+    if (!pat.empty()) {
+        SCR_DrawString_hook_possible1_detour = CreateInlineHook(pat.get_first(), SCR_DrawString_hook_possible1_detour);
+    }
+
+    Memory::VP::InterceptCall(cg(0x30011F68,0x3001A49B), crosshair_render_func, crosshair_render_hook);
 
     Memory::VP::InterceptCall(cg(0x30011222,0x30019752), trap_R_DrawStretchPic, R_DrawStretchPic_leftsniper);
 
@@ -1196,6 +1262,15 @@ void codDLLhooks(HMODULE handle) {
         //    MessageBoxW(NULL, L"FAILED TO HOOK", L"Error", MB_OK | MB_ICONERROR);
         //    return;
         //}
+
+    // CG_DrawWeaponSelect
+    CreateMidHook(cg(0x30033A41, 0x30046C5B), [](SafetyHookContext& ctx) {
+        auto config = FindMenuConfig("weaponinfo");
+        if (config && config->alignment.h_right) {
+            *(float*)(ctx.esp + 0x10) += ((process_width() * 0.5f) * get_safeArea_horizontal());
+        }
+
+        });
 
     Item_Paint_cg = CreateInlineHook(OFFSET + LoadedGame->Item_Paint, Item_Paint_cg_f);
 
@@ -1222,26 +1297,37 @@ void codDLLhooks(HMODULE handle) {
     //}
 
     //DrawHudElemMaterial_mid.reset();
-
-    if (cg(0x3001FB14)) {
-        Memory::VP::InterceptCall(cg(0x3001FB14), DrawSingleHudElem2dog, DrawSingleHudElem2dHook);
+    auto SingleHudElem_ptr = cg(0x3001FB14, 0x3002A4C4);
+    if (SingleHudElem_ptr) {
+        Memory::VP::InterceptCall(SingleHudElem_ptr, DrawSingleHudElem2dog, DrawSingleHudElem2dHook);
     }
 
     DrawHudElemMaterial_mid = CreateMidHook(cg(0x3001F8D4, 0x3002A26C), [](SafetyHookContext& ctx) {
         const char* hud_elem_shader_name = (const char*)(ctx.esp + 0x1C);
-
+        hudelem_s* elem = (hudelem_s*)ctx.edi;
         // Check if shader has a config
         const HudShaderConfig* shaderConfig = FindHudShaderConfig(hud_elem_shader_name);
 
+        float* x = (float*)(ctx.esi);
+        float& y = *(float*)(ctx.esp + 0x10);
+        float& width = *(float*)(ctx.esp + 0x18);
+        float& height = *(float*)(ctx.esp + 0x14);
+
+        auto isAlignX = [elem](const alignx_e alig_type) {
+            if (!elem) {
+                return false;
+            }
+
+            return elem->alignx == alig_type;
+
+            };
+
+
         // Hardcoded "black" OR config with stretch flag set
-        bool shouldStretch = (strcmp(hud_elem_shader_name, "black") == 0) ||
+        bool shouldStretch = ((strcmp(hud_elem_shader_name, "black") == 0) && width >= 640 && height >= 480) ||
             (shaderConfig && shaderConfig->alignment.stretch);
 
         if (shouldStretch) {
-            float* x = (float*)(ctx.esi);
-            float& y = *(float*)(ctx.esp + 0x10);
-            float& width = *(float*)(ctx.esp + 0x18);
-            float& height = *(float*)(ctx.esp + 0x14);
 
             *x += -process_width();
 
@@ -1253,16 +1339,15 @@ void codDLLhooks(HMODULE handle) {
         }
         // Apply alignment-based adjustments from config
         else if (shaderConfig) {
-            float* x = (float*)(ctx.esi);
-            float& y = *(float*)(ctx.esp + 0x10);
+
 
             float halfWidth = process_width() * 0.5f;
             float safeX = get_safeArea_horizontal();
 
-            if (shaderConfig->alignment.h_left) {
+            if (shaderConfig->alignment.h_left && !isAlignX(ALIGNX_LEFT)) {
                 *x += (-halfWidth) * safeX;
             }
-            else if (shaderConfig->alignment.h_right) {
+            else if (shaderConfig->alignment.h_right && isAlignX(ALIGNX_RIGHT)) {
                 *x += (halfWidth)*safeX;
             }
 
@@ -1325,11 +1410,13 @@ void InitHook() {
         MessageBoxW(NULL, L"COD CLASSIC LOAD FAILED", L"Error", MB_OK | MB_ICONWARNING);
         return;
     }
-
-    if (exe(1)) {
-        Cvar_Set_og = safetyhook::create_inline(exe(0x00433A60), Cvar_Set);
-
-        static auto blur_test = safetyhook::create_mid(0x4D9926, [](SafetyHookContext& ctx) {
+    auto pat = hook::pattern("53 8B 5C 24 ? 56 8B 74 24 ? 57 53");
+        
+        if(!pat.empty())
+        Cvar_Set_og = safetyhook::create_inline(pat.get_first(), Cvar_Set);
+        pat = hook::pattern("E8 ? ? ? ? 83 C4 ? 8D 46 ? 5B 83 C4");
+        if(!pat.empty())
+        static auto blur_test = safetyhook::create_mid(pat.get_first(), [](SafetyHookContext& ctx) {
 
             static float fuck[4]{};
             float* args = (float*)(ctx.esp);
@@ -1340,8 +1427,7 @@ void InitHook() {
             args[2] += process_widths() * 2.f;
 
             });
-        Memory::VP::Patch<int>(0x431F36, CVAR_ARCHIVE);
-    }
+    
 
     char buffer[128]{};
     const char* buffertosee = "UNKNOWN";
@@ -1359,13 +1445,12 @@ void InitHook() {
     LoadMenuConfigs();
     LoadHudShaderConfigs();
     printf("should call the cg func\n");
-    if (LoadedGame && LoadedGame->game == UO_SP) {
-        printf("doing the winmain hook\n");
-        //Memory::VP::InterceptCall(0x00455176, InsideWinMain, sub_431CA0);
 
-        static auto AfterCvars = safetyhook::create_mid(0x0045517B, sub_431CA0);
+    pat = hook::pattern("83 C4 ? 8D 4C 24 ? 68 ? ? ? ? 51 E8 ? ? ? ? 8D 54 24");
+    if(!pat.empty())
+        static auto AfterCvars = safetyhook::create_mid(pat.get_first(), sub_431CA0);
 
-    }
+    
 
     Memory::VP::InjectHook(0x00411757, Con_DrawConsole);
 
