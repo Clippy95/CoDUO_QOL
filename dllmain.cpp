@@ -81,6 +81,7 @@ Cvar_GetT Cvar_Get = (Cvar_GetT)NULL;
 
 cvar_t* cg_fovscale;
 cvar_t* cg_fovfixaspectratio;
+cvar_t* cg_fixaspect;
 cvar_t* safeArea_horizontal;
 cvar_t* r_noborder;
 cvar_t* r_mode_auto;
@@ -369,6 +370,9 @@ LPVOID GetModuleEndAddress(HMODULE hModule) {
 
 // For glOrtho - adjusts screen-space ortho projection
 double process_widths(double width = 0) {
+    if (cg_fixaspect && !cg_fixaspect->integer) {
+        return 0.f;
+    }
     float x = (float)*(int*)LoadedGame->X_res_Addr;
     float y = (float)*(int*)(LoadedGame->X_res_Addr + 0x4);
 
@@ -382,6 +386,11 @@ double process_widths(double width = 0) {
 
 // For game functions - adjusts game's internal 480-based coordinate system
 double process_width(double width = 0) {
+
+    if (cg_fixaspect && !cg_fixaspect->integer) {
+        return 0.f;
+    }
+
     float x = (float)*(int*)LoadedGame->X_res_Addr;
     float y = (float)*(int*)(LoadedGame->X_res_Addr + 0x4);
 
@@ -467,7 +476,9 @@ BOOL __stdcall FreeLibraryHook(HMODULE hLibModule) {
 }
 
 float get_safeArea_horizontal() {
-
+    if (cg_fixaspect && !cg_fixaspect->integer) {
+        return 1.f;
+    }
     float printing = safeArea_horizontal != 0 ? safeArea_horizontal->value : 1.f;
 
     //printf("SafeArea cvar ptr %p %f\n", safeArea_horizontal, printing);
@@ -571,7 +582,8 @@ int Cvar_Init_hook() {
     int& size_cvars = *(int*)0x4805EC0;
     printf("cvar_init cvar hooks cvar_get ptr %p size %d\n", Cvar_Get, size_cvars);
     cg_fovscale = Cvar_Get((char*)"cg_fovscale", "1.0", CVAR_ARCHIVE);
-    cg_fovfixaspectratio = Cvar_Get((char*)"cg_fovfixaspectratio", "1.0", CVAR_ARCHIVE);
+    cg_fovfixaspectratio = Cvar_Get((char*)"cg_fixaspectFOV", "1", CVAR_ARCHIVE);
+    cg_fixaspect = Cvar_Get((char*)"cg_fixaspect", "1", CVAR_ARCHIVE);
     safeArea_horizontal = Cvar_Get((char*)"safeArea_horizontal", "1.0", CVAR_ARCHIVE);
     printf("safearea ptr return %p size after %d\n", safeArea_horizontal, size_cvars);
     r_noborder = Cvar_Get((char*)"r_noborder", "0", CVAR_ARCHIVE);
