@@ -89,6 +89,9 @@ cvar_t* r_noborder;
 cvar_t* r_mode_auto;
 cvar_t* player_sprintmult;
 
+cvar_t* r_ext_texture_filter_anisotropic;
+
+
 void codDLLhooks(HMODULE handle);
 
 void ui_hooks(HMODULE handle);
@@ -218,11 +221,7 @@ SAFETYHOOK_NOINLINE uintptr_t g(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
 
 }
 
-void trap_R_SetColor(float* rgba) {
-    auto ptr = cg(0x3002A750);
-    if (ptr)
-        cdecl_call<void>(ptr, rgba);
-}
+
 
 SAFETYHOOK_NOINLINE uintptr_t exe(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
 
@@ -239,6 +238,7 @@ SAFETYHOOK_NOINLINE uintptr_t exe(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
 
 }
 
+
 uintptr_t sp_mp(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
 
     if (!LoadedGame)
@@ -252,6 +252,16 @@ uintptr_t sp_mp(uintptr_t CODUOSP, uintptr_t CODUOMP = 0) {
 
     return NULL;
 
+}
+
+cvar_s* __cdecl Cvar_Find(const char* a1) {
+    return cdecl_call<cvar_s*>(exe(0x00433700));
+}
+
+void trap_R_SetColor(float* rgba) {
+    auto ptr = cg(0x3002A750);
+    if (ptr)
+        cdecl_call<void>(ptr, rgba);
 }
 
 SafetyHookInline* CG_GetViewFov_og_S{};
@@ -302,6 +312,24 @@ double CG_GetViewFov_hook() {
         }
     }
     return fov;
+}
+
+int __stdcall StringContains(const char* SubStr, const char* StringBuffer)
+{
+    unsigned int v2; // edi
+    const char* Str_1; // esi
+
+    v2 = strlen(SubStr);
+    Str_1 = strstr(StringBuffer, SubStr);
+    if (!Str_1)
+        return 0;
+    while (Str_1 != StringBuffer && !isspace(*(Str_1 - 1)) || !isspace(Str_1[v2]) && Str_1[v2])
+    {
+        Str_1 = strstr(Str_1 + 1, SubStr);
+        if (!Str_1)
+            return 0;
+    }
+    return 1;
 }
 
 void CheckModule()
@@ -363,6 +391,7 @@ int __stdcall glviewport_47BD978 (DWORD xo, DWORD yo , DWORD x, DWORD y) {
     return stdcall_call<int>(**(uintptr_t**)0x47BD978, 240, yo, x, y);
 
 }
+
 
 LPVOID GetModuleEndAddress(HMODULE hModule) {
     if (hModule == NULL) {
@@ -604,6 +633,7 @@ uintptr_t InsideWinMain;
 uintptr_t cvar_init_og;
 
 int Cvar_Init_hook() {
+    r_ext_texture_filter_anisotropic = Cvar_Get("r_ext_texture_filter_anisotropic", "1", CVAR_ARCHIVE | CVAR_LATCH);
     auto result = cdecl_call<int>(cvar_init_og);
 
     int& size_cvars = *(int*)0x4805EC0;
@@ -616,6 +646,9 @@ int Cvar_Init_hook() {
     r_noborder = Cvar_Get((char*)"r_noborder", "0", CVAR_ARCHIVE);
     r_mode_auto = Cvar_Get((char*)"r_mode_auto", "0", CVAR_ARCHIVE);
     player_sprintmult = Cvar_Get("player_sprintmult", "0.66666669", CVAR_CHEAT);
+
+
+
     return result;
 }
 
@@ -1654,6 +1687,31 @@ float* __cdecl SCR_AdjustFrom640(float* x, float* y, float* w, float* h) {
 
 }
 
+uintptr_t qglTexParameteri_ptr;
+
+bool GL_EXT_texture_filter_anisotropic_supported = false;
+
+int __stdcall qglTexParameteri_aniso_hook1(int a1, int a2, int a3) {
+    int filter_value = 1;
+    if (r_ext_texture_filter_anisotropic) {
+        filter_value = std::clamp(r_ext_texture_filter_anisotropic->integer, 1, 16);
+    }
+    if(GL_EXT_texture_filter_anisotropic_supported)
+    stdcall_call<int>(*(int*)qglTexParameteri_ptr, a1, 0x84FE, filter_value);
+    auto result = stdcall_call<int>(*(int*)qglTexParameteri_ptr, a1, a2, a3);
+    return result;
+    
+}
+
+int __stdcall qglTexParameteri_aniso_hook2(int a1, int a2, int a3) {
+    if(GL_EXT_texture_filter_anisotropic_supported)
+    stdcall_call<int>(*(int*)qglTexParameteri_ptr, a1, 0x84FE, 1);
+    auto result = stdcall_call<int>(*(int*)qglTexParameteri_ptr, a1, a2, a3);
+    return result;
+
+}
+
+
 
 void InitHook() {
     CheckGame();
@@ -1664,6 +1722,22 @@ void InitHook() {
 
     InitializeDisplayModesForGame();
 
+    if (sp_mp(1)) {
+
+         Memory::VP::Read<uintptr_t>(exe(0x004D1A1C + 2),qglTexParameteri_ptr);
+
+        Memory::VP::Nop(0x004D1A1C, 6);
+        Memory::VP::Nop(0x004D1C3C, 6);
+
+        Memory::VP::InjectHook(0x004D1A1C, qglTexParameteri_aniso_hook1,Memory::VP::HookType::Call);
+        Memory::VP::InjectHook(0x004D1C3C, qglTexParameteri_aniso_hook2, Memory::VP::HookType::Call);
+
+        static auto GL_EXT_texture_filter_anisotropic_check = safetyhook::create_mid(exe(0x00504EAF), [](SafetyHookContext& ctx) {
+            GL_EXT_texture_filter_anisotropic_supported = ctx.eax != 0;
+            });
+
+        Memory::VP::Nop(0x504ED7, 6);
+    }
 
     auto pat = hook::pattern("53 8B 5C 24 ? 56 8B 74 24 ? 57 53");
         
