@@ -1833,6 +1833,8 @@ int __cdecl com_init_hook() {
 
 }
 
+int resolution_modded[2];
+
 void InitHook() {
     CheckGame();
     if (!CheckGame()) {
@@ -1942,6 +1944,46 @@ void InitHook() {
 
     //sprintf_s(buffer, sizeof(buffer), "INIT START %s", buffertosee);
     //MessageBoxA(NULL, buffer, "Error", MB_OK | MB_ICONWARNING);
+
+    pat = hook::pattern("68 ? ? ? ? 56 FF 15 ? ? ? ? 83 C4 ? 5F");
+    if (!pat.empty()) {
+        static auto R_init_end = safetyhook::create_mid(pat.get_first(), [](SafetyHookContext& ctx) {
+
+            int* res = (int*)LoadedGame->X_res_Addr;
+
+            resolution_modded[0] = res[1] * STANDARD_ASPECT;
+
+            printf("res %d %d %p\n", resolution_modded[0], res[1], resolution_modded);
+
+            });
+    }
+
+    pat = hook::pattern("? ? ? ? ? ? 6A 00 6A 00 51 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? 50");
+    if (!pat.empty()) {
+        Memory::VP::Patch<int*>(pat.get_first(2), resolution_modded);
+    }
+    pat = hook::pattern("? ? ? ? ? ? 8B C6 99 F7 3D");
+    if (!pat.empty()) {
+        Memory::VP::Patch<int*>(pat.get_first(2), resolution_modded);
+    }
+
+    pat = hook::pattern("A1 ? ? ? ? 2B C1 8D 4E");
+    if (!pat.empty()) {
+        Memory::VP::Patch<int*>(pat.get_first(1), resolution_modded);
+    }
+
+    pat = hook::pattern("? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? E8 ? ? ? ? 83 F8 ? 89 44 24 ? 7D ? 89 6C 24");
+    if (!pat.empty()) {
+        Memory::VP::Patch<int*>(pat.get_first(2), resolution_modded);
+    }
+    pat = hook::pattern("? ? ? ? ? ? 6A 00 6A 00 C7 44 24 ? ? ? ? ? ? ? ? ? ? ? C7 44 24");
+    if (!pat.empty()) {
+        Memory::VP::Patch<int*>(pat.get_first(2), resolution_modded);
+    }
+    pat = hook::pattern("? ? ? ? ? ? 33 FF 85 D2 0F 95 C2");
+    if (!pat.empty()) {
+        Memory::VP::Patch<int*>(pat.get_first(2), resolution_modded);
+    }
 
     SetUpFunctions();
     LoadMenuConfigs();
