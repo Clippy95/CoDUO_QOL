@@ -167,32 +167,32 @@ popd</Command>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="cevar.h" />
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="Hooking.Patterns.h" />
+    <ClInclude Include="src\cevar.h" />
+    <ClInclude Include="src\framework.h" />
+    <ClInclude Include="include\Hooking.Patterns.h" />
     <ClInclude Include="include\helper.hpp" />
-    <ClInclude Include="MemoryMgr.h" />
-    <ClInclude Include="pch.h" />
-    <ClInclude Include="rinput.h" />
-    <ClInclude Include="safetyhook.hpp" />
-    <ClInclude Include="shared.h" />
-    <ClInclude Include="structs.h" />
-    <ClInclude Include="Zydis.h" />
+    <ClInclude Include="include\MemoryMgr.h" />
+    <ClInclude Include="src\pch.h" />
+    <ClInclude Include="src\rinput.h" />
+    <ClInclude Include="include\safetyhook.hpp" />
+    <ClInclude Include="src\shared.h" />
+    <ClInclude Include="src\structs.h" />
+    <ClInclude Include="include\Zydis.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cevars.cpp" />
-    <ClCompile Include="dllmain.cpp" />
-    <ClCompile Include="game.ixx" />
-    <ClCompile Include="Hooking.Patterns.cpp" />
-    <ClCompile Include="pch.cpp">
+    <ClCompile Include="src\cevars.cpp" />
+    <ClCompile Include="src\dllmain.cpp" />
+    <ClCompile Include="src\game.ixx" />
+    <ClCompile Include="include\Hooking.Patterns.cpp" />
+    <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="rinput.cpp" />
-    <ClCompile Include="safetyhook.cpp" />
-    <ClCompile Include="Zydis.c" />
+    <ClCompile Include="src\rinput.cpp" />
+    <ClCompile Include="include\safetyhook.cpp" />
+    <ClCompile Include="include\Zydis.c" />
   </ItemGroup>
   <ItemGroup>
     <MASM Include="include\fpu_ops_x86.asm">

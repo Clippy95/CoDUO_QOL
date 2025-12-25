@@ -18,63 +18,63 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="framework.h">
+    <ClInclude Include="src\framework.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="pch.h">
+    <ClInclude Include="src\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Hooking.Patterns.h">
+    <ClInclude Include="include\Hooking.Patterns.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="safetyhook.hpp">
+    <ClInclude Include="include\safetyhook.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Zydis.h">
+    <ClInclude Include="include\Zydis.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="shared.h">
+    <ClInclude Include="src\shared.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MemoryMgr.h">
+    <ClInclude Include="include\MemoryMgr.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="structs.h">
+    <ClInclude Include="src\structs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\helper.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="cevar.h">
+    <ClInclude Include="src\cevar.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="rinput.h">
+    <ClInclude Include="src\rinput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dllmain.cpp">
+    <ClCompile Include="src\dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="pch.cpp">
+    <ClCompile Include="src\pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Hooking.Patterns.cpp">
+    <ClCompile Include="include\Hooking.Patterns.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="safetyhook.cpp">
+    <ClCompile Include="include\safetyhook.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Zydis.c">
+    <ClCompile Include="include\Zydis.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cevars.cpp">
+    <ClCompile Include="src\cevars.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="rinput.cpp">
+    <ClCompile Include="src\rinput.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="game.ixx">
+    <ClCompile Include="src\game.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
