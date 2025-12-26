@@ -51,6 +51,9 @@
     <ClInclude Include="src\rinput.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\GMath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\dllmain.cpp">

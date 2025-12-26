@@ -24,6 +24,7 @@ import game;
 #include "Hooking.Patterns.h"
 #include "cevar.h"
 #include "rinput.h"
+#include "GMath.h"
 
 
 
@@ -1594,6 +1595,43 @@ void ui_hooks(HMODULE handle) {
     }
 }
 
+uintptr_t G_CheckForPreventFriendlyFire_address;
+
+void G_CheckForPreventFriendlyFire(uintptr_t unknown) {
+
+    __asm {
+        mov eax,unknown
+        call G_CheckForPreventFriendlyFire_address
+    }
+
+}
+bool is_enemy_crosshair = false;
+void G_CheckForPreventFriendlyFire_hook(uintptr_t unknown) {
+    uintptr_t original_eax;
+    __asm mov original_eax,eax
+
+    ////*ally_check_ptr = 0x85;
+
+    //enemy_check[0] = true;
+
+    ////*friendly_flag_check = 0x80000000;
+    //G_CheckForPreventFriendlyFire(original_eax);
+    //enemy_check[0] = false;
+    ////printf("FIRST g_friendlyfireDist_read_addr %p ally_check_ptr %d friendly_flag_check 0x%X\n", *g_friendlyfireDist_read_addr, *ally_check_ptr, *friendly_flag_check);
+
+    //*ally_check_ptr = 0x84;
+    ////*friendly_flag_check = 0x1000000;
+
+    is_enemy_crosshair = false;
+
+    G_CheckForPreventFriendlyFire(original_eax);
+
+    //printf("g_friendlyfireDist_read_addr %p ally_check_ptr %d friendly_flag_check 0x%X\n", *g_friendlyfireDist_read_addr, *ally_check_ptr, *friendly_flag_check);
+
+}
+
+cevar_s* g_enemyFireDist;
+
 void game_hooks(HMODULE handle) {
     if(!sp_mp(1))
         return;
@@ -1608,6 +1646,38 @@ void game_hooks(HMODULE handle) {
             Memory::VP::Patch<float*>(pattern.get_first(2), &player_sprintmult->value);
 
     }
+
+    G_CheckForPreventFriendlyFire_address = g(0x20020010);
+
+    Memory::VP::InjectHook(g(0x200146D3), G_CheckForPreventFriendlyFire_hook);
+
+    if (!g_enemyFireDist)
+        g_enemyFireDist = Cevar_Get("g_enemyFireDist", 4096.f, CVAR_ARCHIVE,-1.f,FLT_MAX);
+
+
+
+    CreateMidHook(g(0x2002019D), [](SafetyHookContext& ctx) {
+
+        if (g_enemyFireDist->base->value == 0.f) {
+            is_enemy_crosshair = false;
+            return;
+        }
+
+        vector3* coords_1 = (vector3*)(ctx.edi + 0xE4);
+        vector3* coords_2 = (vector3*)(ctx.esp + 0x70);
+
+        vector3 difference = *coords_1 - *coords_2;
+
+        bool allowed_to_tag = (difference.magnitude() <= g_enemyFireDist->base->value) || g_enemyFireDist->base->value == -1.f;
+
+        if (allowed_to_tag && !(ctx.eflags & 0x40) == 0) {
+
+            is_enemy_crosshair = true;
+        }
+        else {
+            is_enemy_crosshair = false;
+        }
+        });
 
 }
 
@@ -1693,6 +1763,29 @@ void codDLLhooks(HMODULE handle) {
 
 
     Memory::VP::InterceptCall(cg(0x30011F68, 0x3001A49B), crosshair_render_func, crosshair_render_hook);
+
+    static cevar_s* cg_drawCrosshair_friendly_green;
+
+    if (!cg_drawCrosshair_friendly_green)
+        cg_drawCrosshair_friendly_green = Cevar_Get("cg_drawCrosshair_friendly_green",1,CVAR_ARCHIVE,0,1);
+
+    if (sp_mp(1)) {
+        CreateMidHook(cg(0x30011916), [](SafetyHookContext& ctx) {
+            uint32_t* some_player_flags = (uint32_t*)cg(0x3026D9F0);
+            if (is_enemy_crosshair) {
+                ctx.eip = cg(0x30011922);
+                return;
+            }
+            else if ((*some_player_flags & 0x1000000) != 0 && cg_drawCrosshair_friendly_green->base->integer) {
+                vector3* crosshair_color = (vector3*)(ctx.esp + 0x10);
+                crosshair_color->x = 0.f;
+                crosshair_color->y = 0.80f;
+                crosshair_color->z = 0.25f;
+                ctx.eip = cg(0x30011932);
+            }
+
+            });
+    }
 
     Memory::VP::InterceptCall(cg(0x30011222, 0x30019752), trap_R_DrawStretchPic, R_DrawStretchPic_leftsniper);
 
