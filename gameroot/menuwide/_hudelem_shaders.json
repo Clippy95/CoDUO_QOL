@@ -7,12 +7,12 @@
     "shaderName": "gfx/hud/hud@us_rank1.dds",
     "alignment": "[LB]"
   },
-  
+
   {
     "shaderName": "gfx/hud/hud@us_rank2.dds",
     "alignment": "[LB]"
   },
-  
+
   {
     "shaderName": "gfx/hud/hud@us_rank3.dds",
     "alignment": "[LB]"
@@ -24,6 +24,53 @@
   {
     "shaderName": "gfx/hud/hud@us_rank5.dds",
     "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/m_bomber_hud-icon.dds",
+    "alignment": "[RB]"
+  },
+  {
+    "shaderName": "gfx/hud/hudadd@clock.dds",
+    "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/hudadd@cockpit_0.dds",
+    "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/hudadd@radio_0.dds",
+    "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/hudadd@rwing_0.dds",
+    "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/hudadd@lwing_0.dds",
+    "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/hudadd@rwaist_0.dds",
+    "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/hudadd@lwaist_0.dds",
+    "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/hudadd@rtail_0.dds",
+    "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/hudadd@ltail_0.dds",
+    "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/objective.dds",
+    "alignment": "[LB]"
+  },
+  {
+    "shaderName": "hudObjectiveRing",
+    "alignment": "[LB]"
   }
-
 ]
