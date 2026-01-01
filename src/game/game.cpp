@@ -1,6 +1,8 @@
 #include "game.h"
 #include "../framework.h"
 #include "../structs.h"
+#include "../loader/component_loader.h"
+#include "Hooking.Patterns.h"
 uintptr_t cg_game_offset = 0;
 uintptr_t ui_offset = 0;
 uintptr_t game_offset = 0;
@@ -41,4 +43,33 @@ namespace game {
 		return FS_GetFileList_CALL(path, extension, listbuf,bufsize ,exe(0x425730));
 	}
 
+	void SCR_DrawStringExt(int x, int y, float size, const char* string, float* setColor, qboolean forceColor) {
+		auto ptr = exe(0x4E1120);
+		if (ptr) {
+			cdecl_call<void>(ptr, x, y, size, string, setColor, forceColor);
+		}
+	}
+
+	uintptr_t SCR_DrawString_addr;
+	void SCR_DrawString(float x, float y, int fontID, float scale, float* color, const char* text, float spaceBetweenChars, int maxChars, int arg9) {
+		if (!SCR_DrawString_addr)
+			return;
+		cdecl_call<void>(SCR_DrawString_addr, x, y, fontID, scale, color, text, spaceBetweenChars, maxChars, arg9);
+	}
+
+	class component final : public component_interface
+	{
+	public:
+		void post_unpack() override
+		{
+			auto pattern = hook::pattern("8B 44 24 ? 8B 4C 24 ? 8B 54 24 ? 50 8B 44 24 ? 51 8B 4C 24 ? 52 8B 54 24 ? 6A 00");
+			if (!pattern.empty()) {
+				SCR_DrawString_addr = (uintptr_t)pattern.get_first();
+			}
+			
+
+		}
+	};
+
 }
+REGISTER_COMPONENT(game::component);

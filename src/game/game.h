@@ -82,4 +82,6 @@ namespace game {
 
 	extern int FS_FCloseFile(fileHandle_t* f);
 	extern int FS_GetFileList(const char* path, const char* extension, char* listbuf, int bufsize);
+	extern void SCR_DrawStringExt(int x, int y, float size, const char* string, float* setColor, qboolean forceColor);
+	extern void SCR_DrawString(float x, float y, int fontID, float scale, float* color, const char* text, float spaceBetweenChars, int maxChars, int arg9);
 }
