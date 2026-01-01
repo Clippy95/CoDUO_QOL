@@ -94,7 +94,7 @@ cvar_t* hook_shortversion;
 
 cvar_t* hook_version;
 
-cevar_t* r_ext_texture_filter_anisotropic;
+cevar_t* r_qol_texture_filter_anisotropic;
 
 void codDLLhooks(HMODULE handle);
 
@@ -683,7 +683,7 @@ int Cvar_Init_hook() {
     component_loader::post_unpack();
 
     int* size_cvars = (int*)0x4805EC0;
-    r_ext_texture_filter_anisotropic = Cevar_Get("r_ext_texture_filter_anisotropic", 16, CVAR_ARCHIVE | CVAR_LATCH, 1, 16);
+    r_qol_texture_filter_anisotropic = Cevar_Get("r_qol_texture_filter_anisotropic", 16, CVAR_ARCHIVE | CVAR_LATCH, 1, 16);
     printf("cvar_init cvar hooks cvar_get ptr %p size %d\n", Cvar_Get, *size_cvars);
     auto result = cdecl_call<int>(cvar_init_og);
 
@@ -2115,8 +2115,8 @@ bool GL_EXT_texture_filter_anisotropic_supported = false;
 
 int __stdcall qglTexParameteri_aniso_hook1(int a1, int a2, int a3) {
     int filter_value = 1;
-    if (r_ext_texture_filter_anisotropic) {
-        filter_value = std::clamp(r_ext_texture_filter_anisotropic->base->integer, 1, 16);
+    if (r_qol_texture_filter_anisotropic) {
+        filter_value = std::clamp(r_qol_texture_filter_anisotropic->base->integer, 1, 16);
     }
     if(GL_EXT_texture_filter_anisotropic_supported)
     stdcall_call<int>(*(int*)qglTexParameteri_ptr, a1, 0x84FE, filter_value);
