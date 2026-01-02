@@ -72,5 +72,13 @@
   {
     "shaderName": "hudObjectiveRing",
     "alignment": "[LB]"
+  },
+  {
+    "shaderName": "gfx/hud/hud@littlejeep.dds",
+    "alignment": "[RB]"
+  },
+  {
+    "shaderName": "gfx/hud/hud@littletank.dds",
+    "alignment": "[RB]"
   }
 ]
