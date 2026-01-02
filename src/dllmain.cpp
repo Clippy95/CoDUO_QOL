@@ -574,8 +574,7 @@ void Resolution_Static_mod(cvar_s* cvar, const char* old_value = "") {
     else {
         resolution_modded[0] = res[0];
     }
-    if (cvar)
-        set_cg_drawupperright_x_wide(cvar->integer != 0);
+
 }
 
 void Resolution_Static_mod_cb(cvar_s* cvar, const char* old_value = "") {
@@ -1496,6 +1495,12 @@ void InitializeDisplayModes() {
         r_vidModes_menu_dynamic.push_back(menuMode);
     }
 
+    if (!r_vidModes_menu_dynamic.empty()) {
+        vidmode_menu Custom = { AllocateString("@MENU_CUSTOM"),-1 };
+            
+        r_vidModes_menu_dynamic.push_back(Custom);
+    }
+
     printf("Initialized %d unique display modes (%d available for menu)\n",
         (int)r_vidModes_dynamic.size(), menuCount);
 
@@ -1644,7 +1649,11 @@ void game_hooks(HMODULE handle) {
 
     G_CheckForPreventFriendlyFire_address = g(0x20020010);
 
-    Memory::VP::InjectHook(g(0x200146D3), G_CheckForPreventFriendlyFire_hook);
+    //Memory::VP::InjectHook(g(0x200146D3), G_CheckForPreventFriendlyFire_stub,Memory::VP::HookType::Jump);
+    CreateMidHook(g(0x200146D3), [](SafetyHookContext& ctx) {
+        is_enemy_crosshair = false;
+        });
+
 
     if (!g_enemyFireDist)
         g_enemyFireDist = Cevar_Get("g_enemyFireDist", 4096.f, CVAR_ARCHIVE,-1.f,FLT_MAX);
@@ -2099,12 +2108,13 @@ cvar_s* __cdecl Cvar_Set(const char* cvar_name, const char* value, BOOL force) {
         StaticInstructionPatches(NULL, false);
         if (cg_fixedAspect)
             set_cg_drawupperright_x_wide(cg_fixedAspect->base->integer);
-    }
+    } else if (cg_fixedAspect && cg_fixedAspect->base == cvar)
+        set_cg_drawupperright_x_wide(cvar->integer != 0);
 
     return cvar;
 }
 
-SafetyHookInline SCR_AdjustFrom640_OG;
+//SafetyHookInline SCR_AdjustFrom640_OG;
 bool ConsoleDrawing;
 void Con_DrawConsole() {
     //cdecl_call<int>(0x4D7D70);
@@ -2115,19 +2125,18 @@ void Con_DrawConsole() {
 
 
 
-float* __cdecl SCR_AdjustFrom640(float* x, float* y, float* w, float* h) {
-
-    auto result = SCR_AdjustFrom640_OG.ccall<float*>(x, y, w, h);
-
-    if (ConsoleDrawing && x && h) {
-        static float fuckwit[2];
-
-        *x *= fuckwit[0];
-        *w *= fuckwit[1];
-        printf("fuckwit %p", fuckwit);
-    }
-
-}
+//float* __cdecl SCR_AdjustFrom640(float* x, float* y, float* w, float* h) {
+//
+//    auto result = SCR_AdjustFrom640_OG.ccall<float*>(x, y, w, h);
+//
+//    if (ConsoleDrawing && x && h) {
+//        static float fuckwit[2];
+//
+//        *x *= fuckwit[0];
+//        *w *= fuckwit[1];
+//    }
+//
+//}
 
 uintptr_t qglTexParameteri_ptr;
 
