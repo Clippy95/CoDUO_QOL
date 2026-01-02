@@ -579,6 +579,17 @@ int resolution_modded[2];
 
 void StaticInstructionPatches(cvar_s* safeArea_horizontal_ptr = safeArea_horizontal, bool DLLLoad = true);
 
+float* cg_drawupperright_x;
+
+void set_cg_drawupperright_x_wide(bool is_wide) {
+    if (!cg_game_offset || !cg_drawupperright_x)
+        return;
+    if (is_wide)
+        *cg_drawupperright_x = 620.f + (process_width() * 0.5f) * get_safeArea_horizontal();
+    else
+        *cg_drawupperright_x = 620.f;
+}
+
 void Resolution_Static_mod(cvar_s* cvar, const char* old_value = "") {
     int* res = (int*)LoadedGame->X_res_Addr;
     if (cvar && cvar->integer) {
@@ -587,6 +598,8 @@ void Resolution_Static_mod(cvar_s* cvar, const char* old_value = "") {
     else {
         resolution_modded[0] = res[0];
     }
+    if (cvar)
+        set_cg_drawupperright_x_wide(cvar->integer != 0);
 }
 
 void Resolution_Static_mod_cb(cvar_s* cvar, const char* old_value = "") {
@@ -2016,8 +2029,20 @@ void codDLLhooks(HMODULE handle) {
 
             });
     }
-}
 
+    pattern = hook::pattern(handle, "? ? ? ? ? ? ? ? ? E8 ? ? ? ? ? ? ? ? A1 ? ? ? ? ? ? ? ? ? ? 50");
+    if (!pattern.empty()) {
+        cg_drawupperright_x = *pattern.get_first<float*>(2);
+        if (cg_drawupperright_x) {
+            DWORD oldProtect;
+            VirtualProtect(cg_drawupperright_x, sizeof(cg_drawupperright_x), PAGE_EXECUTE_READWRITE, &oldProtect);
+        }
+
+        if(cg_fixaspect)
+        set_cg_drawupperright_x_wide(cg_fixaspect->base->integer);
+    }
+
+}
 
 
 SafetyHookInline Cvar_Set_og;
@@ -2096,6 +2121,8 @@ cvar_s* __cdecl Cvar_Set(const char* cvar_name, const char* value, BOOL force) {
     // Special hardcoded callbacks
     if (cvar == safeArea_horizontal) {
         StaticInstructionPatches(NULL, false);
+        if (cg_fixaspect)
+            set_cg_drawupperright_x_wide(cg_fixaspect->base->integer);
     }
 
     return cvar;
