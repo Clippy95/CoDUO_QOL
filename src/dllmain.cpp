@@ -2504,6 +2504,23 @@ void InitHook() {
     LoadHudShaderConfigs();
     printf("should call the cg func\n");
 
+    HHOOK hook = SetWindowsHookExA(WH_CALLWNDPROC, [](int code, WPARAM w, LPARAM l) -> LRESULT {
+    if (code >= 0) {
+        CWPSTRUCT* p = (CWPSTRUCT*)l;
+        if (p->message == WM_CREATE) {
+            HWND hConsole = GetConsoleWindow();
+            if (hConsole) {
+                HICON hIconBig = (HICON)GetClassLongPtrA(hConsole, GCLP_HICON);
+                HICON hIconSmall = (HICON)GetClassLongPtrA(hConsole, GCLP_HICONSM);
+                if (hIconBig && hIconSmall) {
+                    SetClassLongPtrA(p->hwnd, GCLP_HICON, (LONG_PTR)hIconBig);
+                    SetClassLongPtrA(p->hwnd, GCLP_HICONSM, (LONG_PTR)hIconSmall);
+                }
+            }
+        }
+    }
+    return CallNextHookEx(NULL, code, w, l); }, NULL, GetCurrentThreadId());
+
     //pat = hook::pattern("83 C4 ? 8D 4C 24 ? 68 ? ? ? ? 51 E8 ? ? ? ? 8D 54 24");
     //if(!pat.empty())
     //    static auto AfterCvars = safetyhook::create_mid(pat.get_first(), sub_431CA0);
