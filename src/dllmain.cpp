@@ -2275,7 +2275,7 @@ bool IsUALPresent() {
     }
     return false;
 }
-
+void LAACheck();
 void InitHook() {
     CheckGame();
     if (!CheckGame()) {
@@ -2289,6 +2289,7 @@ void InitHook() {
         MessageBoxA(NULL, "It appears that Ulitmate ASI Loader is missing, it's highly recommended that you use it to load the mod, otherwise expect issues!", "CoDUO_QOL", MB_OK | MB_ICONWARNING);
     }
 
+    LAACheck();
     component_loader::post_start();
     SetProcessDPIAware();
 

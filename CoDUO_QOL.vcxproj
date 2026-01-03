@@ -191,6 +191,7 @@ popd</Command>
     <ClCompile Include="src\game.ixx" />
     <ClCompile Include="include\Hooking.Patterns.cpp" />
     <ClCompile Include="src\game\game.cpp" />
+    <ClCompile Include="src\LAAPatch.cpp" />
     <ClCompile Include="src\loader\component_interface.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
