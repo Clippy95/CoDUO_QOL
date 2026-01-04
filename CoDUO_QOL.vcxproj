@@ -22,6 +22,7 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{3b1efd02-ef8d-44de-8c8d-13ef1b806a52}</ProjectGuid>
+	<MSBuildWarningsAsMessages>MSB8012</MSBuildWarningsAsMessages>
     <RootNamespace>CODClassicHook</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>CoDUO_QOL</ProjectName>
@@ -73,10 +74,10 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <TargetExt>.asi</TargetExt>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetExt>.asi</TargetExt>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -89,6 +90,8 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)src\loader;$(ProjectDir)src\game;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -96,6 +99,7 @@
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\$(Configuration)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <OutputFile>$(OutDir)ddraw$(TargetExt)</OutputFile>
     </Link>
     <PreBuildEvent>
       <Command>pushd "$(SolutionDir)include\extra"
@@ -116,6 +120,8 @@ popd</Command>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir)include;$(ProjectDir)src\loader;$(ProjectDir)src\game;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -125,6 +131,7 @@ popd</Command>
       <EnableUAC>false</EnableUAC>
       <AdditionalLibraryDirectories>$(ProjectDir)lib\$(Configuration)</AdditionalLibraryDirectories>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <OutputFile>$(OutDir)ddraw$(TargetExt)</OutputFile>
     </Link>
     <PreBuildEvent>
       <Command>pushd "$(SolutionDir)include\extra"
@@ -183,6 +190,7 @@ popd</Command>
     <ClInclude Include="src\shared.h" />
     <ClInclude Include="src\structs.h" />
     <ClInclude Include="include\Zydis.h" />
+    <ClInclude Include="src\utils\common.h" />
     <ClInclude Include="src\utils\hooking.h" />
   </ItemGroup>
   <ItemGroup>
@@ -202,8 +210,9 @@ popd</Command>
     <ClCompile Include="src\rinput.cpp" />
     <ClCompile Include="include\safetyhook.cpp" />
     <ClCompile Include="include\Zydis.c" />
-    <ClCompile Include="src\steam_check.cpp" />
+    <ClCompile Include="src\SDLLP.cpp" />
     <ClCompile Include="src\ui.cpp" />
+    <ClCompile Include="src\utils\common.cpp" />
     <ClCompile Include="src\weapon.cpp" />
   </ItemGroup>
   <ItemGroup>

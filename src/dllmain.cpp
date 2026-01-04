@@ -3,6 +3,7 @@ import game;
 #include "pch.h"
 #include "game/game.h"
 #include <component_loader.h>
+#include "utils/common.h"
 //#include "MinHook.h"
 
 
@@ -2249,6 +2250,69 @@ bool IsUALPresent() {
     return false;
 }
 void LAACheck();
+
+UINT GetPrivateProfileIntW(LPCWSTR lpAppName, LPCWSTR lpKeyName, INT nDefault, const std::vector<std::wstring>& fileNames)
+{
+    for (const auto& file : fileNames)
+    {
+        nDefault = GetPrivateProfileIntW(lpAppName, lpKeyName, nDefault, file.c_str());
+    }
+    return nDefault;
+}
+
+bool PathExists(auto szPath)
+{
+    try
+    {
+        auto path = std::filesystem::path(szPath);
+        if (path.is_absolute())
+            return std::filesystem::exists(path);
+        else
+            return std::filesystem::exists(std::filesystem::path(GetModulePath(NULL)).parent_path() / path);
+    }
+    catch (...)
+    {
+    }
+    return false;
+}
+
+BOOL WritePrivateProfileStringW_UAL(LPCWSTR lpAppName, LPCWSTR lpKeyName, LPCWSTR lpString, std::vector<std::wstring> fileNames)
+{
+    bool anyExists = std::any_of(fileNames.begin(), fileNames.end(),
+        [](const auto& f) { return PathExists(f.c_str()); });
+
+    if (!anyExists)
+    {
+        HMODULE hModule = NULL;
+        GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+            (LPCWSTR)&WritePrivateProfileStringW_UAL,
+            &hModule
+        );
+        wchar_t path[MAX_PATH];
+        GetModuleFileNameW(hModule, path, MAX_PATH);
+        auto dllDir = std::filesystem::path(path).parent_path();
+        fileNames.clear();
+        fileNames.emplace_back(dllDir / L"global.ini");
+    }
+
+    for (const auto& file : fileNames)
+    {
+        if (PathExists(file.c_str()))
+        {
+            return WritePrivateProfileStringW(lpAppName, lpKeyName, lpString, file.c_str());
+        }
+    }
+
+    if (!fileNames.empty())
+    {
+        return WritePrivateProfileStringW(lpAppName, lpKeyName, lpString, fileNames[0].c_str());
+    }
+
+    return FALSE;
+}
+
 void InitHook() {
     CheckGame();
     if (!CheckGame()) {
@@ -2256,11 +2320,33 @@ void InitHook() {
         return;
     }
     
+    std::vector<std::wstring> iniPaths;
 
 
-    if (!IsUALPresent()) {
+
+
+    std::wstring modulePath = GetModulePath(NULL);
+    std::wstring moduleName = modulePath.substr(modulePath.find_last_of(L"/\\") + 1);
+    moduleName.resize(moduleName.find_last_of(L'.'));
+    modulePath.resize(modulePath.find_last_of(L"/\\") + 1);
+
+    iniPaths.emplace_back(modulePath + moduleName + L".ini");
+    iniPaths.emplace_back(modulePath + L"global.ini");
+    iniPaths.emplace_back(modulePath + L"scripts\\global.ini");
+    iniPaths.emplace_back(modulePath + L"plugins\\global.ini");
+    iniPaths.emplace_back(modulePath + L"update\\global.ini");
+    auto nDontLoadFromDllMain = GetPrivateProfileIntW(TEXT("globalsets"), TEXT("dontloadfromdllmain"), TRUE, iniPaths);
+
+
+    if (!IsUALPresent() && thisModuleFileName() != LIBRARYW) {
         MessageBoxA(NULL, "It appears that Ulitmate ASI Loader is missing, it's highly recommended that you use it to load the mod, otherwise expect issues!", "CoDUO_QOL", MB_OK | MB_ICONWARNING);
     }
+    else if (IsUALPresent() && thisModuleFileName() != LIBRARYW && nDontLoadFromDllMain) {
+        MessageBoxA(NULL, "Detected loading via Ultimate ASI Loader, but DontLoadFromDllMain within global.ini is set to true, which is unsupported for CoDUO_QOL and will cause issues with the steam version!, this has been automatically disabled, please restart.", "CoDUO_QOL", MB_OK | MB_ICONWARNING);
+        WritePrivateProfileStringW_UAL(TEXT("globalsets"), TEXT("dontloadfromdllmain"), TEXT("0"), iniPaths);
+    }
+
+
 
     LAACheck();
     component_loader::post_start();

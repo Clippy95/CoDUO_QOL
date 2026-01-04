@@ -39,14 +39,9 @@ jobs:
       shell: cmd
       run: |
         mkdir upload
-        mkdir upload\plugins
-        7z e ddraw-Win32.zip ddraw.dll -oupload -y
-        copy "Release\CoDUO_QOL.asi" upload\plugins\
-        copy "Release\CoDUO_QOL.pdb" upload\plugins\
+        copy "Release\ddraw.dll" upload\
+        copy "Release\CoDUO_QOL.pdb" upload\
         xcopy gameroot\menuwide upload\menuwide /E /I /Y
-        xcopy gameroot\patches upload\patches /E /I /Y
-        copy "gameroot\patch_coduo.bat" upload\
-        del ddraw-Win32.zip
     
     - name: Upload build artifact
       uses: actions/upload-artifact@v4

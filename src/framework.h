@@ -58,3 +58,7 @@ template<typename Ret, typename... Args>
 inline Ret thiscall_call(uintptr_t addr, Args... args) {
     return reinterpret_cast<Ret(__thiscall*)(Args...)>(addr)(args...);
 }
+
+#define LIBRARY "DDRAW.dll"
+
+#define LIBRARYW TEXT(LIBRARY)
