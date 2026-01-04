@@ -2298,7 +2298,7 @@ void LAACheck();
 void InitHook() {
     CheckGame();
     if (!CheckGame()) {
-        MessageBoxW(NULL, L"COD CLASSIC LOAD FAILED", L"Error", MB_OK | MB_ICONWARNING);
+        MessageBoxW(NULL, L"Unsupported game", L"CoDUO_QOL", MB_OK | MB_ICONWARNING);
         return;
     }
     
