@@ -8,6 +8,10 @@
     "alignment": "[LB]"
   },
   {
+    "menuName": "jeepstatus",
+    "alignment": "[LB]"
+  },
+  {
     "menuName": "weaponinfo",
     "alignment": "[RB]"
   },

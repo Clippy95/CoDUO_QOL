@@ -7,12 +7,10 @@
     "shaderName": "gfx/hud/hud@us_rank1.dds",
     "alignment": "[LB]"
   },
-
   {
     "shaderName": "gfx/hud/hud@us_rank2.dds",
     "alignment": "[LB]"
   },
-
   {
     "shaderName": "gfx/hud/hud@us_rank3.dds",
     "alignment": "[LB]"
@@ -79,6 +77,18 @@
   },
   {
     "shaderName": "gfx/hud/hud@littletank.dds",
+    "alignment": "[RB]"
+  },
+  {
+    "shaderName": "gfx/hud/hud@vehiclehealth.dds",
+    "alignment": "[RB]"
+  },
+  {
+    "shaderName": "gfx/hud/hud@health.dds",
+    "alignment": "[RB]"
+  },
+  {
+    "shaderName": "gfx/hud/hud@health_bar.dds",
     "alignment": "[RB]"
   }
 ]
