@@ -13,7 +13,8 @@
 #include <functional>
 #include <limits>
 
-
+// hack
+bool isShuttingDown();
 
 
 namespace safetyhook {
@@ -743,6 +744,8 @@ std::expected<void, InlineHook::Error> InlineHook::disable() {
 }
 
 void InlineHook::destroy() {
+    if (isShuttingDown())
+        return;
     [[maybe_unused]] auto disable_result = disable();
 
     std::scoped_lock lock{m_mutex};

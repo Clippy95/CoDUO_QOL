@@ -489,6 +489,10 @@ SafetyHookInline FreeLibraryD;
 
 bool is_shutdown = false;
 
+bool isShuttingDown() {
+    return is_shutdown;
+}
+
 BOOL __stdcall FreeLibraryHook(HMODULE hLibModule) {
     if (!is_shutdown) {
         char LibraryName[256]{};
@@ -1009,6 +1013,7 @@ Alignment ParseAlignment(const std::string& alignStr) {
     return align;
 }
 
+static std::unordered_map<std::string, const MenuConfig*> g_menuConfigLookup;
 void LoadMenuConfigs() {
     char modulePath[MAX_PATH];
     GetModuleFileNameA(NULL, modulePath, MAX_PATH);
@@ -1059,6 +1064,18 @@ void LoadMenuConfigs() {
                 entry.path().string().c_str(), e.what());
         }
     }
+
+    g_menuConfigLookup.clear();
+    g_menuConfigLookup.reserve(g_menuConfigs.size());
+
+    for (const auto& config : g_menuConfigs) {
+        std::string lowerName = config.menuName;
+        for (char& c : lowerName) {
+            c = std::tolower(static_cast<unsigned char>(c));
+        }
+        g_menuConfigLookup[lowerName] = &config;
+    }
+
 }
 
 // ============================================================================
@@ -1067,13 +1084,13 @@ void LoadMenuConfigs() {
 const MenuConfig* FindMenuConfig(const char* menuName) {
     if (!menuName) return nullptr;
 
-    for (const auto& config : g_menuConfigs) {
-        if (config.menuName == menuName) {
-            return &config;
-        }
+    std::string lowerName = menuName;
+    for (char& c : lowerName) {
+        c = std::tolower(static_cast<unsigned char>(c));
     }
 
-    return nullptr;
+    auto it = g_menuConfigLookup.find(lowerName);
+    return (it != g_menuConfigLookup.end()) ? it->second : nullptr;
 }
 
 // ============================================================================
@@ -1282,7 +1299,7 @@ struct HudShaderConfig {
 
 // Global storage for shader configs
 std::vector<HudShaderConfig> g_hudShaderConfigs;
-
+static std::unordered_map<std::string, const HudShaderConfig*> g_hudShaderLookup;
 void LoadHudShaderConfigs() {
     char modulePath[MAX_PATH];
     GetModuleFileNameA(NULL, modulePath, MAX_PATH);
@@ -1316,19 +1333,31 @@ void LoadHudShaderConfigs() {
     catch (const std::exception& e) {
         printf("Failed to parse _hudelem_shaders.json: %s\n", e.what());
     }
+
+    g_hudShaderLookup.clear();
+    g_hudShaderLookup.reserve(g_hudShaderConfigs.size());
+
+    for (const auto& config : g_hudShaderConfigs) {
+        std::string lowerName = config.shaderName;
+        for (char& c : lowerName) {
+            c = std::tolower(static_cast<unsigned char>(c));
+        }
+        g_hudShaderLookup[lowerName] = &config;
+    }
+
 }
 
 
 const HudShaderConfig* FindHudShaderConfig(const char* shaderName) {
     if (!shaderName) return nullptr;
 
-    for (const auto& config : g_hudShaderConfigs) {
-        if (config.shaderName == shaderName) {
-            return &config;
-        }
+    std::string lowerName = shaderName;
+    for (char& c : lowerName) {
+        c = std::tolower(static_cast<unsigned char>(c));
     }
 
-    return nullptr;
+    auto it = g_hudShaderLookup.find(lowerName);
+    return (it != g_hudShaderLookup.end()) ? it->second : nullptr;
 }
 SafetyHookMid* DrawObjectives;
 
@@ -2743,7 +2772,7 @@ void InitHook() {
     pat = hook::pattern("85 C0 0F 85 ? ? ? ? A1 ? ? ? ? 85 C0 74 ? A1");
     if (!pat.empty()) {
         static auto shutdown = safetyhook::create_mid(pat.get_first(-5), [](SafetyHookContext& ctx) {
-
+            is_shutdown = true;
             component_loader::pre_destroy();
             // Required for steam exes otherwise crashes on unhooking
             ShutdownAllHooks();
