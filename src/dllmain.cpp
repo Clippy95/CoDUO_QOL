@@ -2388,9 +2388,9 @@ void InitHook() {
 
     if (sp_mp(1)) {
         // remove CVAR_ROM from sv_cheats in SP
-        Memory::VP::Patch<uint8_t>((0x431CEF + 1), CVAR_SYSTEMINFO);
-        Memory::VP::Patch<uint8_t>((0x4AC6F1 + 1), CVAR_SYSTEMINFO);
-        Memory::VP::Patch<uint8_t>((0x44EB32 + 1), CVAR_SYSTEMINFO);
+        Memory::VP::Patch<uint8_t>((0x431CEF + 1), CVAR_SYSTEMINFO | CVAR_ARCHIVE);
+        Memory::VP::Patch<uint8_t>((0x4AC6F1 + 1), CVAR_SYSTEMINFO | CVAR_ARCHIVE);
+        Memory::VP::Patch<uint8_t>((0x44EB32 + 1), CVAR_SYSTEMINFO | CVAR_ARCHIVE);
     }
 
     std::wstring modulePath = GetModulePath(NULL);
