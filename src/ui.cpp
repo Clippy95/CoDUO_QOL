@@ -13,7 +13,9 @@
 #include "GMath.h"
 #include <buildnumber.h>
 #include "framework.h"
+bool GetGameScreenRes(vector2& res);
 double process_width(double width);
+double process_widths(double width); 
 namespace gui {
     cevar_s* branding = nullptr;
     cevar_s* cg_ammo_overwrite_size_enabled = nullptr;
@@ -40,6 +42,15 @@ namespace gui {
         return RE_EndFrameD.unsafe_ccall<int>(a1, a2);
     }
 
+    void* VM_call_og;
+
+    void __stdcall DrawBlack() {
+        float black[] = {0.f,0.f,0.f,1.f};
+        game::SetColor(black);
+        vector2 res;
+        GetGameScreenRes(res);
+        game::drawStretchPic(-process_widths(0), 0.f, res.x + process_widths(0), res.y, 0.f, 0.f, 0.f, 0.f,*game::whiteShader);
+    }
     class component final : public component_interface
     {
     public:
@@ -52,6 +63,10 @@ namespace gui {
             }
             cg_ammo_overwrite_size = Cevar_Get("cg_ammo_overwrite_size", 0.325f,CVAR_ARCHIVE);
             cg_ammo_overwrite_size_enabled = Cevar_Get("cg_ammo_overwrite_size_enabled", 1, CVAR_ARCHIVE);
+            pattern = hook::pattern("FF 15 ? ? ? ? 6A 00 FF 15 ? ? ? ? 83 C4 ? A1");
+            if (!pattern.empty()) {
+                Memory::VP::Nop(pattern.get_first(), 6);
+            }
 
         }
 

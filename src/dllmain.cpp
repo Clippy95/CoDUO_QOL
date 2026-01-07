@@ -149,7 +149,13 @@ UO_MP,
 
 COD_Classic_Version *LoadedGame = NULL;
 
-
+bool GetGameScreenRes(vector2& res) {
+    if (!LoadedGame)
+        return false;
+    res.x = (float)*(uint32_t*)(LoadedGame->X_res_Addr);
+    res.y = (float)*(uint32_t*)(LoadedGame->X_res_Addr + 0x4);
+    return true;
+}
 
 #define CGAME_OFF(x) (cg_game_offset + (x - 0x30000000))
 #define GAME_OFF(x) (game_offset + (x - 0x20000000))
