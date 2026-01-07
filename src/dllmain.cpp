@@ -2419,6 +2419,16 @@ void InitHook() {
 
         // dont set sv_cheats to 0 on /map load
         Memory::VP::Nop(0x0044A458, 5);
+
+        // doesn't really seem needed but uncomment to have the effect
+        //// increase MAX cvars
+        //static cvar_s new_cvars_array[MAX_CVARS_NEW]{};
+
+        //Memory::VP::Patch<uint32_t>((0x0043398B + 6), MAX_CVARS_NEW);
+        //Memory::VP::Patch<cvar_s*>((0x004339B0 + 2), new_cvars_array);
+        //Memory::VP::Patch<cvar_s*>((0x00433D58 + 2), new_cvars_array);
+        //Memory::VP::Patch<cvar_s*>((0x00433E44 + 1), new_cvars_array);
+        //Memory::VP::Patch<cvar_s*>((0x00433E92 + 2), new_cvars_array);
     }
 
     std::wstring modulePath = GetModulePath(NULL);
