@@ -16,10 +16,19 @@
 bool GetGameScreenRes(vector2& res);
 double process_width(double width);
 double process_widths(double width); 
+
+typedef int(__stdcall* glClearColorT)(float r, float g, float b, float a);
+
+typedef int(__stdcall* glClearT)(uint32_t bit);
+
+glClearT *glClear = (glClearT*)0x047BD87C;
+glClearColorT* glClearColor = (glClearColorT*)0x047BDA10;
+
 namespace gui {
     cevar_s* branding = nullptr;
     cevar_s* cg_ammo_overwrite_size_enabled = nullptr;
     cevar_s* cg_ammo_overwrite_size = nullptr;
+    cevar_s* r_fixedaspect_clear = nullptr;
 	void draw_branding() {
         if (!branding || !branding->base || !branding->base->integer)
             return;
@@ -67,7 +76,30 @@ namespace gui {
             if (!pattern.empty()) {
                 Memory::VP::Nop(pattern.get_first(), 6);
             }
+            pattern = hook::pattern("8B 0D ? ? ? ? 8B 41 ? 85 C0 74 ? ? ? ? ? ? ? 8B 15");
+            auto glclearpat = hook::pattern("FF 15 ? ? ? ? F6 05 ? ? ? ? ? 5E");
+            auto glcolorpat = hook::pattern("FF 15 ? ? ? ? 68 ? ? ? ? FF 15 ? ? ? ? C7 05");
 
+            if (!glcolorpat.empty() && !glclearpat.empty() && !pattern.empty()) {
+                r_fixedaspect_clear = Cevar_Get("r_fixedaspect_clear", 2, CVAR_ARCHIVE, 0, 2);
+                static auto yeah = safetyhook::create_mid(pattern.get_first(), [](SafetyHookContext& ctx) {
+                    if (!r_fixedaspect_clear)
+                        return;
+                    if ((r_fixedaspect_clear->base->integer == 1 || (r_fixedaspect_clear->base->integer == 2 && (*game::cstate != 2 || *game::keycatchers & KEYCATCH_UI)))) {
+
+                            auto qglClearColor = *glClearColor;
+                            qglClearColor(0.f, 0.f, 0.f, 1.f);
+
+                            auto qglClear = *glClear;
+                            qglClear(16640); // GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT
+                        
+                    }
+                    });
+
+                glClearColor = *glcolorpat.get_first<glClearColorT*>(2);
+                glClear = *glclearpat.get_first<glClearT*>(2);
+
+            }
         }
 
         void post_cgame() override

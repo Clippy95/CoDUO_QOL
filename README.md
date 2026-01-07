@@ -22,6 +22,7 @@ Aiming to provide enhancements, quality of life features and extended features f
 
 ## Features\cvars:
 - `cg_fixedAspect` - Fixes HUD stretching, not recommended to be changed live requires vid_restart for some elements.
+- `r_fixedaspect_clear` - clears color and depth buffers before drawing, 1 always clears it, while 2 only clears it in cases of UI,menus & cinematics
 - `cg_fixedAspectFOV` - Implements HOR+ FOV scaling when set to 1
 - `safeArea_horizontal` - Horizontal safe area as a fraction of the screen width, might not effect all HUD elements, setting this to 0.0 will cause the HUD to be in 4:3 borders
 - `safeArea_vertical` - not fully implemented.

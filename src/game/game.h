@@ -242,5 +242,6 @@ namespace game {
 
 	//WEAK symbol<void(float x, float y, float w, float h, float s1, float t1, float s2, float t2, qhandle_t hShader)> drawStretchPic{ 0x4DF240 };
 	WEAK symbol<void(float *color)> SetColor{ 0x4DF1B0 };
-
+    WEAK symbolp<qhandle_t> cstate{ "A1 ? ? ? ? 83 E8 00",1,game::EXE,true };
+    WEAK symbolp<qhandle_t> keycatchers{ "F6 05 ? ? ? ? ? 74 ? ? ? ? ? ? ? ? ? ? ? ? ? ? ? DF E0",2,game::EXE,true };
 }
