@@ -201,6 +201,7 @@ popd</Command>
     <ClInclude Include="src\utils\hooking.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\bink.cpp" />
     <ClCompile Include="src\cevars.cpp" />
     <ClCompile Include="src\dllmain.cpp" />
     <ClCompile Include="src\game.ixx" />
