@@ -75,6 +75,7 @@ cevar_t* cg_fov_fix_lowfovads;
 cevar_t* cg_fovMin;
 cvar_t* cg_fovscale;
 cevar_t* cg_hudelem_alignhack;
+cevar_t* cg_hudelem_printnames;
 cvar_t* cg_fixedAspectFOV;
 cevar_t* cg_fixedAspect;
 cvar_t* safeArea_horizontal;
@@ -752,6 +753,8 @@ int Cvar_Init_hook() {
     }
 
     cg_hudelem_alignhack = Cevar_Get("cg_hudelem_alignhack", 0, CVAR_ARCHIVE, 0);
+
+    cg_hudelem_printnames = Cevar_Get("cg_hudelem_printnames", 0, CVAR_CHEAT,0,1);
 
     game::Cmd_AddCommand("qol_showallcvars", PrintRegisteredCvars);
 
@@ -1993,7 +1996,7 @@ void codDLLhooks(HMODULE handle) {
         }
 
         auto isAlignX = [elem](const alignx_e alig_type) {
-            if (!elem) {
+            if (!elem || !cg_hudelem_alignhack->base->integer) {
                 return false;
             }
 
@@ -2002,7 +2005,7 @@ void codDLLhooks(HMODULE handle) {
             };
 
         auto isAlignY = [elem](const aligny_e alig_type) {
-            if (!elem) {
+            if (!elem || !cg_hudelem_alignhack->base->integer) {
                 return false;
             }
 
@@ -2012,6 +2015,8 @@ void codDLLhooks(HMODULE handle) {
 
 
         // Hardcoded "black" OR config with stretch flag set
+        if(cg_hudelem_printnames->base->integer)
+        printf("name %s\n", hud_elem_shader_name);
 
         bool is_black_screen = (strcmp(hud_elem_shader_name, "black") == 0);
 
