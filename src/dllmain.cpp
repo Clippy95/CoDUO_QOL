@@ -2508,6 +2508,11 @@ void InitHook() {
         }
     }
 
+
+        static const char* new_com_hunkMegs_default = "512";
+        Memory::VP::Patch<const char*>(exe(0x0042BDCA + 1,0x00435A1B + 1), new_com_hunkMegs_default);
+    
+
     pat = hook::pattern("E8 ? ? ? ? 8B 76 ? 83 C4 ? 85 F6 74");
 
     if (!pat.empty()) {
