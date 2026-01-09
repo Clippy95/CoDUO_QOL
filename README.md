@@ -45,6 +45,7 @@ Aiming to provide enhancements, quality of life features and extended features f
 - `cg_weaponSprint_mod` - restores <sup><sup>yes this was planned for UO</sup></sup>  and implements new [weapon sprinting bob and rotation attributes](#cg_weaponsprint_mod) inspired by T4, requires new eWeapon files for each weapon (SP only)
 - `reload_eweapons` - command to reload eWeapon definitions (SP only)
 - `cg_subtitle_centered_enable` aligns subtitles to the center rather than the left.
+- `cg_ammo_overwrite_size_enabled` & `cg_ammo_overwrite_size` allows you to customize the font size of the ammo ownerdraw
 - and possible some more, use the `qol_showallcvars` command to to show all cvars registered by the plugin!
 
 ## Installation

@@ -184,22 +184,20 @@ namespace gui {
         {
             HMODULE cgame = (HMODULE)cg_game_offset;
 
-            auto pattern = hook::pattern(cgame, "52 50 8D 74 24 ? E8 ? ? ? ? 83 C4 ? 5F 5E 5B 83 C4 ? C3 8B 4C 24 ? 8B 54 24 ? 8B 44 24 ? 51");
 
-            if (!pattern.empty()) {
-                CreateMidHook(pattern.get_first(), [](SafetyHookContext& ctx) {
+                CreateMidHook(cg(0x3002570E,0x3003218A), [](SafetyHookContext& ctx) {
 
                     if (cg_ammo_overwrite_size_enabled->base->integer && cg_ammo_overwrite_size->base->value) {
 
-                        float& scale = *(float*)&ctx.eax;
-                        scale = cg_ammo_overwrite_size->base->value;
+                        float* scale = sp_mp(1) ? (float*)&ctx.eax : (float*)ctx.esp;
+                        *scale = cg_ammo_overwrite_size->base->value;
 
 
                     }
 
 
                     });
-            }
+            
 
             Memory::VP::InterceptCall(cg(0x3002575E, 0x3003229F), cg_DrawPlayerStance_ptr, CG_DrawPlayerStance_hook);
 
