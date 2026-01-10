@@ -39,4 +39,14 @@ inline hook::pattern find_pattern(Args... args)
     hook::pattern pattern;
     ((pattern = hook::pattern(args), !pattern.count_hint(count).empty()) || ...);
     return pattern;
+
+}
+inline bool is_wine()
+{
+    HMODULE ntdllMod = GetModuleHandleA("ntdll.dll");
+
+    if (ntdllMod && GetProcAddress(ntdllMod, "wine_get_version"))
+        return true;
+
+    return false;
 }

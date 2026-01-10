@@ -734,7 +734,7 @@ int Cvar_Init_hook() {
 
     Cevar_Get("cg_fov", 80.f, CVAR_ARCHIVE, 1.f, 160.f);
 
-    rinput::raw_input = Cevar_Get("m_rawinput", 1, CVAR_ARCHIVE, 0, 1);
+    rinput::raw_input = Cevar_Get("m_rawinput", is_wine() ? 0 : 1, CVAR_ARCHIVE, 0, 1);
 
     cg_fovscale = Cvar_Get((char*)"cg_fovscale", "1.0", CVAR_ARCHIVE);
     cg_fovscale_ads = Cvar_Get((char*)"cg_fovscale_ads", "1.0", CVAR_ARCHIVE);
@@ -2466,7 +2466,7 @@ BOOL WritePrivateProfileStringW_UAL(LPCWSTR lpAppName, LPCWSTR lpKeyName, LPCWST
 
     return FALSE;
 }
-
+bool GameIsLargeAddressAware();
 void InitHook() {
     CheckGame();
     if (!CheckGame()) {
@@ -2573,9 +2573,10 @@ void InitHook() {
         }
     }
 
-
+    if (GameIsLargeAddressAware()) {
         static const char* new_com_hunkMegs_default = "512";
-        Memory::VP::Patch<const char*>(exe(0x0042BDCA + 1,0x00435A1B + 1), new_com_hunkMegs_default);
+        Memory::VP::Patch<const char*>(exe(0x0042BDCA + 1, 0x00435A1B + 1), new_com_hunkMegs_default);
+    }
     
 
     pat = hook::pattern("E8 ? ? ? ? 8B 76 ? 83 C4 ? 85 F6 74");
