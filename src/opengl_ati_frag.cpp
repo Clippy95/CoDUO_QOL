@@ -662,8 +662,11 @@ void WINAPI glEndFragmentShaderATI_hook() {
 
     // Translate to GLSL
     std::string glslSource = TranslateToGLSL(shader);
-    ATI_DEBUG_PRINT_CHANNEL(0, "[ATI->GLSL] Generated shader : \n % s\n", glslSource.c_str());
+    auto logfile = Cvar_Find("logfile");
 
+    if (logfile && logfile->integer) {
+        ATI_DEBUG_PRINT_CHANNEL(0, "[ATI->GLSL] Generated shader : \n % s\n", glslSource.c_str());
+    }
     // Compile GLSL
     shader.glsl_program = CompileGLSL(glslSource);
     shader.compiled = true;
@@ -935,7 +938,13 @@ void* __stdcall wglGetProcAddress_hook(const char* name) {
     return wglGetProcAddressD->stdcall<void*>(name);
 }
 
-
+//void GLDISABLE(GLenum cap) {
+//    stdcall_call<void>(*(int*)0x047BCED8, cap);
+//}
+//
+//void R_FogOff() {
+//    stdcall_call<void>(0x004CD410);
+//}
 
 namespace opengl_ati_frag {
 
