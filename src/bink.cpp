@@ -14,6 +14,8 @@
 #include <buildnumber.h>
 #include "framework.h"
 cvar_s* mss_volume;
+cevar_s* cinematic_reset_RoQPlayed;
+
 FARPROC GetProcAddress(const char* modulename, const char* lpProcName) {
     auto module = GetModuleHandleA(modulename);
     if (module) {
@@ -23,6 +25,7 @@ FARPROC GetProcAddress(const char* modulename, const char* lpProcName) {
 }
 uintptr_t BinkSetVolumePtr;
 namespace bink_game {
+
     SafetyHookInline BinkDoFrameog;
      void __stdcall BinkDoFrame_hook(void* bnk) {
          int volume = (int)(32768.0f * std::clamp(mss_volume->value,0.f,1.f));
@@ -42,11 +45,28 @@ namespace bink_game {
 
             mss_volume = Cvar_Find("mss_volume");
 
+            cinematic_reset_RoQPlayed = Cevar_Get("cinematic_reset_RoQPlayed", 1, CVAR_ARCHIVE, 0, 1);
+
             if (BinkDoFrameptr && BinkSetVolumePtr && mss_volume) {
                 BinkDoFrameog = safetyhook::create_inline(BinkDoFrameptr, BinkDoFrame_hook);
             }
 
+            auto pattern = hook::pattern("88 99 ? ? ? ? C7 05");
 
+            if (!pattern.empty() && sp_mp(1)) {
+                static auto roq_test_fix1 = safetyhook::create_mid(pattern.get_first(0), [](SafetyHookContext& ctx) {
+
+                    cin_cache* cin_tables = (cin_cache*)0x877558;
+                    if (cinematic_reset_RoQPlayed && cinematic_reset_RoQPlayed->base->integer != 0) {
+
+                        int* roqplayed = &cin_tables[ctx.ecx].RoQPlayed;
+
+                        Memory::VP::Patch(roqplayed, 0);
+                    }
+                    
+
+                    });
+            }
 
         }
     };

@@ -109,6 +109,64 @@ typedef struct {
 	char* defaultString;
 	int cvarFlags;
 } cvarTable_t;
+
+struct cin_cache
+{
+	char fileName[256];
+	int CIN_WIDTH;
+	int CIN_HEIGHT;
+	int xpos;
+	int ypos;
+	int width;
+	int height;
+	qboolean looping;
+	qboolean holdAtEnd;
+	qboolean dirty;
+	qboolean alterGameState;
+	qboolean silent;
+	qboolean shader;
+	qboolean letterBox;
+	qboolean sound;
+	int iFile;
+	int status;
+	int startTime;
+	int lastTime;
+	int tfps;
+	int RoQPlayed;
+	int ROQSize;
+	unsigned int RoQFrameSize;
+	int onQuad;
+	int numQuads;
+	int samplesPerLine;
+	unsigned int roq_id;
+	int screenDelta;
+	void (*VQ0)(char* status, void* qdata);
+	void (*VQ1)(char* status, void* qdata);
+	void (*VQNormal)(char* status, void* qdata);
+	void (*VQBuffer)(char* status, void* qdata);
+	int samplesPerPixel;
+	char* gray;
+	unsigned int xsize;
+	unsigned int ysize;
+	unsigned int maxsize;
+	unsigned int minsize;
+	qboolean half;
+	qboolean smootheddouble;
+	qboolean inMemory;
+	int normalBuffer0;
+	int roq_flags;
+	int roqF0;
+	int roqF1;
+	int t[2];
+	int roqFPS;
+	int playonwalls;
+	char* buf;
+	int drawX;
+	int drawY;
+	int padding[3];
+};
+
+
 #define KEYCATCH_CONSOLE        0x0001
 #define KEYCATCH_UI                 0x0002
 #define KEYCATCH_MESSAGE        0x0004
