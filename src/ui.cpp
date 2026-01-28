@@ -180,6 +180,21 @@ namespace gui {
             }
         }
 
+        void post_ui() override {
+            // Item_Multi_HandleKey
+                CreateMidHook(ui(0x4001128A,0x40015941), [](SafetyHookContext& ctx) {
+                    auto& key = sp_mp(1) ? *(int*)(ctx.esp) : *(int*)(ctx.esp + 0x1C);
+                    auto& current = sp_mp(1) ? ctx.eax : ctx.esi;
+                    auto& max = sp_mp(1) ? ctx.ecx : ctx.eax;
+
+                    if (key == 201) {
+                        current = (current - 2 + max) % max;
+                    }
+                    });
+            
+
+        }
+
         void post_cgame() override
         {
             HMODULE cgame = (HMODULE)cg_game_offset;

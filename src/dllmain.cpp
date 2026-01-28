@@ -1629,6 +1629,8 @@ void InitializeDisplayModesForGame() {
 }
 
 void ui_hooks(HMODULE handle) {
+    uintptr_t OFFSET = (uintptr_t)handle;
+    ui_offset = OFFSET;
     if (sp_mp(1)) {
         auto cvar_version = Cvar_Find("shortversion");
 
@@ -1638,8 +1640,6 @@ void ui_hooks(HMODULE handle) {
             hook_shortversion = Cvar_Get("hook_shortversion", buffer, CVAR_ROM);
         }
 
-        uintptr_t OFFSET = (uintptr_t)handle;
-        ui_offset = OFFSET;
         Item_Paint_ui = CreateInlineHook(ui(0x40015400), Item_Paint_ui_f);
         CreateMidHook(ui(0x40017330), [](SafetyHookContext& ctx) {
             itemDef_s* item = *(itemDef_s**)(ctx.esp + 0x42C);
